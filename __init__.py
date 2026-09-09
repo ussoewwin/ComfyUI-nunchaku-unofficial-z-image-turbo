@@ -144,6 +144,14 @@ try:
 except Exception:
     logger.exception("ControlLora INT8 dequant patch failed to install")
 
+# Model Patch CPU-offload apply patch: keeps ZImageControlPatch on CPU when a
+# MODEL_PATCH was loaded with cpu_offload=True (ported ModelPatchLoaderCustom).
+try:
+    from .patches.model_patch_cpu_offload import apply_model_patch_cpu_offload
+    apply_model_patch_cpu_offload()
+except Exception:
+    logger.exception("Model Patch CPU-offload apply patch failed to install")
+
 # LATENT None-guard: stock VAEDecode / VAEDecodeTiled index samples["samples"],
 # so a dropped LATENT kills the prompt after sampling already finished.
 try:
@@ -711,6 +719,12 @@ try:
     logger.info("Registered HSWQ ControlNet Loader (ConvRot INT8)")
 except (ImportError, ModuleNotFoundError) as e:
     logger.debug("HSWQ ControlNet Loader not registered: %s", e)
+try:
+    from .nodes.hswq_model_patch_loader import HSWQModelPatchLoaderCustom
+    NODE_CLASS_MAPPINGS["HSWQModelPatchLoaderCustom"] = HSWQModelPatchLoaderCustom
+    logger.info("Registered HSWQ Model Patch Loader (ConvRot INT8 / CPU offload)")
+except (ImportError, ModuleNotFoundError) as e:
+    logger.debug("HSWQ Model Patch Loader not registered: %s", e)
 NODE_DISPLAY_NAME_MAPPINGS = {k: getattr(v, "TITLE", k) for k, v in NODE_CLASS_MAPPINGS.items()}
 # Explicit overrides — TITLE alone is not enough for some ComfyUI graph headers / search menus.
 NODE_DISPLAY_NAME_MAPPINGS["HSWQCheckpointLoaderSDXL"] = "HSWQ Checkpoint Loader (SDXL)"

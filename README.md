@@ -136,6 +136,34 @@ Standard ComfyUI `controlnet_load_state_dict` sets architecture dtype to `weight
 - **Category**: Loaders (`loaders`)
 - **Drop-in replacement**: Can replace ComfyUI's built-in "Load ControlNet Model" node entirely — automatically handles ConvRot INT8, FP8, BF16, and FP16 checkpoints without manual switching
 
+### HSWQ Model Patch Loader (ConvRot INT8 / CPU offload)
+
+<img src="png/Model%20Patch%20Loader.png" alt="HSWQ Model Patch Loader (ConvRot INT8 / CPU offload)" width="400">
+
+ComfyUI loader node for **model patches** (ControlNet, feature projectors, etc.) with **CPU offload** and **ConvRot INT8** support. Loads the model patch directly into VRAM in 8-bit precision (`QuantizedTensor` / `TensorWiseINT8Layout`) and executes via `comfy_kitchen`'s high-speed `int8_linear` kernel with online activation rotation (`convrot`).
+
+Ported from [`ComfyUI-NunchakuFluxLoraStacker`](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker)'s `ModelPatchLoaderCustom` ("Model Patch Loader"). Supported model-patch architectures (same dispatch as the stock `comfy_extras.nodes_model_patch.ModelPatchLoader`):
+
+- **Qwen Image block-wise ControlNet** (`controlnet_blocks.0.y_rms.weight`)
+- **SigLIP multi-feature projector** (`feature_embedder.mid_layer_norm.bias`)
+- **Z-Image Fun ControlNet** (`control_all_x_embedder.2-1.weight`)
+
+#### Features
+
+- **Native INT8 VRAM Retention**: Keeps weights in 8-bit precision in VRAM with `TensorWiseINT8Layout`, significantly reducing memory consumption
+- **Fast Execution**: Uses `comfy_kitchen` `int8_linear` GEMM kernel with online activation rotation for ConvRot layers
+- **CPU Offload**: `cpu_offload` toggle builds the model patch in CPU main memory instead of VRAM
+- **Turing-safe compute dtype**: Automatically selects BF16 on Ampere+ GPUs and FP16 on Turing (sm_75) / older GPUs
+- **Drop-in compatibility**: Non-quantized checkpoints load with plain `manual_cast` operations (identical to the stock loader); INT8 `comfy_quant` checkpoints route through `MixedPrecisionOps`
+
+#### Usage Notes
+
+- **Inputs**: `name` (model patch from `models/model_patches`), `cpu_offload` (BOOLEAN, default `True`)
+- **Outputs**: `MODEL_PATCH`
+- **Category**: Loaders (`loaders`)
+- **Apply with stock apply nodes**: `QwenImageDiffsynthControlnet` / `ZImageFunControlnet` / `USOStyleReference`
+- **`cpu_offload` scope**: fully honored end-to-end only for the Z-Image Fun ControlNet path (via `patches/model_patch_cpu_offload.py`); the Qwen block-wise and SigLIP projector apply nodes are not patched
+
 ### HSWQ Ultimate SD Upscale
 
 <img src="png/usdu_auto_workflow.png" alt="HSWQ Ultimate SD Upscale" width="400">
