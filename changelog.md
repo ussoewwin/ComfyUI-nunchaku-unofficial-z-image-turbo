@@ -7,6 +7,12 @@
   </tr>
 </table>
 
+## Version 3.5.0
+
+- **Added**: **HSWQ Model Patch Loader** (`HSWQModelPatchLoaderCustom`) - Load model patches (ControlNet, feature projectors, etc.) with **CPU offload** and **ConvRot INT8** support. INT8 weights stay in VRAM (`QuantizedTensor` / `TensorWiseINT8Layout`, comfy-kitchen `int8_linear` with online ConvRot rotation); `cpu_offload` builds the patch in CPU main memory; compute dtype auto-selects BF16 (Ampere+) / FP16 (Turing). Ported from ComfyUI-NunchakuFluxLoraStacker `ModelPatchLoaderCustom`; apply with the stock apply nodes (`QwenImageDiffsynthControlnet` / `ZImageFunControlnet` / `USOStyleReference`).
+- **Fixed**: **SAM3 / SAM3.1 ConvRot INT8 support** - restored the comfy_kitchen INT8 unaligned-GEMM fallback (layers whose K/N is not a multiple of 4, e.g. SAM3 `boxRPB_embed_x` K=2, dequantize to float instead of crashing `cublas_gemm_int8`; weights stay INT8 in VRAM) and the SAM3 load patches: `process_clip_state_dict` key remap for pre-split `language_backbone` (fixes "clip missing" -> corrupt text embeddings -> empty/black masks) and SAM3-gated `load_state_dict_guess_config` handling (CLIP/Conv2d keys dequantized, all Linear layers stay true INT8). Stock ComfyUI SAM3/SAM3.1 nodes now load ConvRot INT8 checkpoints correctly (verified on both SAM3 and SAM3.1).
+- See [Release Notes v3.5.0](https://github.com/ussoewwin/ComfyUI-HSWQ-Loader-and-Tools/releases/tag/v3.5.0) for details.
+
 ## Version 3.4.9
 
 - **Improved**: **Dynamic Compute Dtype in HSWQ ControlNet Loader (`HSWQControlNetLoader`) for Turing (sm_75) & Legacy GPU Compatibility** — Resolved potential BF16 runtime errors and implicit FP32 upcasting on NVIDIA Turing (RTX 2000 / GTX 1600 series) and older architectures that lack native BF16 hardware Tensor Cores.

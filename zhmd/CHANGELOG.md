@@ -7,6 +7,12 @@
   </tr>
 </table>
 
+## Version 3.5.0
+
+- **新增**：**HSWQ Model Patch Loader（`HSWQModelPatchLoaderCustom`）** - 加载模型补丁（ControlNet、feature projector 等），支持 **CPU offload** 与 **ConvRot INT8**。权重在 VRAM 中保持 INT8（`QuantizedTensor` / `TensorWiseINT8Layout`，comfy-kitchen `int8_linear` 在线 ConvRot 旋转）；`cpu_offload` 可在 CPU 内存中构建补丁；计算 dtype 自动选择 BF16（Ampere+）/ FP16（Turing）。移植自 ComfyUI-NunchakuFluxLoraStacker 的 `ModelPatchLoaderCustom`；可与标准 apply 节点（`QwenImageDiffsynthControlnet` / `ZImageFunControlnet` / `USOStyleReference`）配合使用。
+- **修复**：**SAM3 / SAM3.1 ConvRot INT8 支持恢复** - 恢复 comfy_kitchen INT8 非对齐 GEMM 回退（K/N 非 4 的倍数维度的层（如 SAM3 `boxRPB_embed_x` K=2）自动反量化回退到 float，不再导致 `cublas_gemm_int8` 崩溃；权重仍以 INT8 保存在 VRAM），以及 SAM3 加载补丁：`process_clip_state_dict` 对预分割 `language_backbone` 键的重映射（修复 "clip missing" -> 文本嵌入损坏 -> 空/黑掩膜）与 SAM3 门控的 `load_state_dict_guess_config` 处理（CLIP/Conv2d 键反量化，所有 Linear 层保持真 INT8）。标准 Comfy SAM3/SAM3.1 节点现在可以正确加载 ConvRot INT8 检查点（已在 SAM3 与 SAM3.1 上验证）。
+- 详情见 [发布说明 v3.5.0](v3.5.0.md)。
+
 ## Version 3.4.9
 
 - **改进**：**HSWQ ControlNet Loader (`HSWQControlNetLoader`) 动态计算 Dtype 适配，全面兼容 Turing (sm_75) 及旧代 GPU** —— 解决了在缺乏原生 BF16 硬件 Tensor Core 的 NVIDIA Turing（RTX 2000 / GTX 1600 系列）及更早架构上可能发生的 BF16 运行时错误与隐式 FP32 升精度开销。
