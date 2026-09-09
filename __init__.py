@@ -144,6 +144,29 @@ try:
 except Exception:
     logger.exception("ControlLora INT8 dequant patch failed to install")
 
+# comfy_kitchen INT8 unaligned-GEMM fallback (SAM3 boxRPB_embed_x K=2 etc.):
+# dequantize non-multiple-of-4 layers to float instead of crashing.
+try:
+    from .patches.comfy_quant_int8 import _patch_comfy_kitchen_int8_gemm_fallback
+    if not _patch_comfy_kitchen_int8_gemm_fallback():
+        logger.warning("comfy_kitchen INT8 unaligned GEMM fallback not installed")
+except Exception:
+    logger.exception("comfy_kitchen INT8 unaligned GEMM fallback failed to install")
+
+# SAM3 / SAM3.1 ConvRot INT8 load handling: CLIP language_backbone key remap
+# + standard-loader routing, so stock ComfyUI SAM3 nodes work with INT8 ckpts.
+try:
+    from .patches.comfy_quant_int8 import (
+        _patch_sam3_process_state_dict,
+        _patch_load_state_dict_guess_config_int8,
+    )
+    if not _patch_sam3_process_state_dict():
+        logger.warning("SAM3 process_state_dict patch not installed")
+    if not _patch_load_state_dict_guess_config_int8():
+        logger.warning("SAM3 load_state_dict_guess_config patch not installed")
+except Exception:
+    logger.exception("SAM3 INT8 load patches failed to install")
+
 # Model Patch CPU-offload apply patch: keeps ZImageControlPatch on CPU when a
 # MODEL_PATCH was loaded with cpu_offload=True (ported ModelPatchLoaderCustom).
 try:
