@@ -696,7 +696,7 @@ LowVramPatch. NVFP4 ConvRot bake alone leaves ``patches_left=60`` → broken.
 
 v3: ENTER proved wrap fires; bake still silent (``nvfp4_convrot=False``).
 
-v4 (owner: まだ駄目だ — ENTER patches=180 nvfp4_convrot=False):
+v4 (owner: still no good — ENTER patches=180 nvfp4_convrot=False):
   Root cause: kitchen ``QuantizedTensor`` inherits ``torch.Tensor.layout``
   (``torch.strided`` → type name ``\"layout\"``). Old ``_qt_layout_name``
   read ``qt.layout`` first and never saw ``_layout_cls``
